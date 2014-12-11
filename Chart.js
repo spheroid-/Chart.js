@@ -72,7 +72,7 @@
 			scaleLabel: "<%=value%>",
 
 			// Number - How many X-Axis labels that should be skipped 
-			showLabelInterval: 1,
+			scaleLabelInterval: 1,
 
 			// Boolean - Whether the scale should stick to integers, and not show any floats even if drawing space is there
 			scaleIntegersOnly: true,
@@ -1496,7 +1496,7 @@
 					firstRotatedWidth;
 				this.xLabelWidth = originalLabelWidth;
 				//Allow 3 pixels x2 padding either side for label readability
-				var xGridWidth = Math.floor(this.calculateX(this.showLabelInterval) - this.calculateX(0)) - 6;
+				var xGridWidth = Math.floor(this.calculateX(this.scaleLabelInterval) - this.calculateX(0)) - 6;
 
 				//Max label rotate should be 90 - also act as a loop counter
 				while ((this.xLabelWidth > xGridWidth && this.xLabelRotation === 0) || (this.xLabelWidth > xGridWidth && this.xLabelRotation <= 90 && this.xLabelRotation > 0)){
@@ -1563,14 +1563,24 @@
 				ctx.font = this.font;
 				each(this.yLabels,function(labelString,index){
 					var yLabelCenter = this.endPoint - (yLabelGap * index),
-						linePositionY = Math.round(yLabelCenter);
+						linePositionY = Math.round(yLabelCenter),
+						drawHorizontalLine = this.showHorizontalLines;
 
 					ctx.textAlign = "right";
 					ctx.textBaseline = "middle";
 					if (this.showLabels){
 						ctx.fillText(labelString,xStart - 10,yLabelCenter);
 					}
-					ctx.beginPath();
+
+					// This is X axis, so draw it
+					if (index === 0 && !drawHorizontalLine){
+						drawHorizontalLine = true;
+					}
+
+					if (drawHorizontalLine){
+						ctx.beginPath();
+					}
+
 					if (index > 0){
 						// This is a grid line in the centre, so drop that
 						ctx.lineWidth = this.gridLineWidth;
@@ -1583,10 +1593,12 @@
 
 					linePositionY += helpers.aliasPixel(ctx.lineWidth);
 
-					ctx.moveTo(xStart, linePositionY);
-					ctx.lineTo(this.width, linePositionY);
-					ctx.stroke();
-					ctx.closePath();
+					if(drawHorizontalLine){
+						ctx.moveTo(xStart, linePositionY);
+						ctx.lineTo(this.width, linePositionY);
+						ctx.stroke();
+						ctx.closePath();
+					}
 
 					ctx.lineWidth = this.lineWidth;
 					ctx.strokeStyle = this.lineColor;
@@ -1599,15 +1611,23 @@
 				},this);
 
 				each(this.xLabels,function(label,index){
-					if(index % this.showLabelInterval){
+					if(index % this.scaleLabelInterval){
 						return;
 					}
 					var xPos = this.calculateX(index) + aliasPixel(this.lineWidth),
 						// Check to see if line/bar here and decide where to place the line
 						linePos = this.calculateX(index - (this.offsetGridLines ? 0.5 : 0)) + aliasPixel(this.lineWidth),
-						isRotated = (this.xLabelRotation > 0);
+						isRotated = (this.xLabelRotation > 0),
+						drawVerticalLine = this.showVerticalLines;
 
-					ctx.beginPath();
+					// This is Y axis, so draw it
+					if (index === 0 && !drawVerticalLine){
+						drawVerticalLine = true;
+					}
+
+					if (drawVerticalLine){
+						ctx.beginPath();
+					}
 
 					if (index > 0){
 						// This is a grid line in the centre, so drop that
@@ -1618,10 +1638,13 @@
 						ctx.lineWidth = this.lineWidth;
 						ctx.strokeStyle = this.lineColor;
 					}
-					ctx.moveTo(linePos,this.endPoint);
-					ctx.lineTo(linePos,this.startPoint - 3);
-					ctx.stroke();
-					ctx.closePath();
+
+					if (drawVerticalLine){
+						ctx.moveTo(linePos,this.endPoint);
+						ctx.lineTo(linePos,this.startPoint - 3);
+						ctx.stroke();
+						ctx.closePath();
+					}
 
 
 					ctx.lineWidth = this.lineWidth;
@@ -1969,6 +1992,12 @@
 		//Number - Width of the grid lines
 		scaleGridLineWidth : 1,
 
+		//Boolean - Whether to show horizontal lines (except X axis)
+		scaleShowHorizontalLines: true,
+
+		//Boolean - Whether to show vertical lines (except Y axis)
+		scaleShowVerticalLines: true,
+
 		//Boolean - If there is a stroke on each bar
 		barShowStroke : true,
 
@@ -2156,11 +2185,13 @@
 				font : helpers.fontString(this.options.scaleFontSize, this.options.scaleFontStyle, this.options.scaleFontFamily),
 				lineWidth : this.options.scaleLineWidth,
 				lineColor : this.options.scaleLineColor,
+				showHorizontalLines : this.options.scaleShowHorizontalLines,
+				showVerticalLines : this.options.scaleShowVerticalLines,
 				gridLineWidth : (this.options.scaleShowGridLines) ? this.options.scaleGridLineWidth : 0,
 				gridLineColor : (this.options.scaleShowGridLines) ? this.options.scaleGridLineColor : "rgba(0,0,0,0)",
 				padding : (this.options.showScale) ? 0 : (this.options.barShowStroke) ? this.options.barStrokeWidth : 0,
 				showLabels : this.options.scaleShowLabels,
-				showLabelInterval : this.options.showLabelInterval,
+				scaleLabelInterval : this.options.scaleLabelInterval,
 				display : this.options.showScale
 			};
 
@@ -2243,6 +2274,7 @@
 
 
 }).call(this);
+
 (function(){
 	"use strict";
 
@@ -2445,6 +2477,12 @@
 		//Number - Width of the grid lines
 		scaleGridLineWidth : 1,
 
+		//Boolean - Whether to show horizontal lines (except X axis)
+		scaleShowHorizontalLines: true,
+
+		//Boolean - Whether to show vertical lines (except Y axis)
+		scaleShowVerticalLines: true,
+
 		//Boolean - Whether the line is curved between points
 		bezierCurve : true,
 
@@ -2619,11 +2657,13 @@
 				font : helpers.fontString(this.options.scaleFontSize, this.options.scaleFontStyle, this.options.scaleFontFamily),
 				lineWidth : this.options.scaleLineWidth,
 				lineColor : this.options.scaleLineColor,
+				showHorizontalLines : this.options.scaleShowHorizontalLines,
+				showVerticalLines : this.options.scaleShowVerticalLines,
 				gridLineWidth : (this.options.scaleShowGridLines) ? this.options.scaleGridLineWidth : 0,
 				gridLineColor : (this.options.scaleShowGridLines) ? this.options.scaleGridLineColor : "rgba(0,0,0,0)",
 				padding: (this.options.showScale) ? 0 : this.options.pointDotRadius + this.options.pointDotStrokeWidth,
 				showLabels : this.options.scaleShowLabels,
-				showLabelInterval : this.options.showLabelInterval,
+				scaleLabelInterval : this.options.scaleLabelInterval,
 				display : this.options.showScale
 			};
 
@@ -2794,6 +2834,7 @@
 
 
 }).call(this);
+
 (function(){
 	"use strict";
 
